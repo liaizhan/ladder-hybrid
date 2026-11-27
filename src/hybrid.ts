@@ -28,6 +28,19 @@ export const READING_SCHEMA = Schema.object({
   },
 });
 
+// Plain JSON Schema of the same shape, for the on-device Prompt API.
+export const READING_JSON_SCHEMA = {
+  type: "object",
+  properties: {
+    starting_obstacle: { type: "string" },
+    reflection: { type: "string" },
+    step_today: { type: "string" },
+    support_line: { type: "string" },
+  },
+  required: ["starting_obstacle", "reflection", "step_today", "support_line"],
+  additionalProperties: false,
+};
+
 export class DeviceUnavailableError extends Error {
   constructor(message: string, readonly detail?: unknown) {
     super(message);
@@ -73,7 +86,12 @@ export function createHybrid(ai: AI, cloudModel?: string): Hybrid {
       createOptions: {
         expectedInputs: [{ type: "text", languages: ["en"] }],
         expectedOutputs: [{ type: "text", languages: ["en"] }],
+        // The SDK does not forward systemInstruction to the on-device model,
+        // so the same instructions go in as the session's system prompt.
+        initialPrompts: [{ role: "system", content: [{ type: "text", value: SYSTEM_PROMPT }] }],
       },
+      // Chrome's Prompt API takes a plain JSON Schema to constrain the output.
+      promptOptions: { responseConstraint: READING_JSON_SCHEMA },
     },
     inCloudParams,
   });

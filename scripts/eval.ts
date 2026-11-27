@@ -28,6 +28,7 @@ const rep = await runEval(hybrid, {
   cloudModel: model,
   userAgent: `node ${process.version}`,
   onProgress: (m) => console.log(m),
+  pauseMs: 4000, // free-tier requests-per-minute limit
 });
 mkdirSync("eval-results", { recursive: true });
 const stamp = rep.date.replace(/[:.]/g, "-");

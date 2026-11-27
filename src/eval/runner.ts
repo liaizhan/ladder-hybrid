@@ -76,17 +76,32 @@ export function summarize(rows: Row[], mode: Mode): Summary {
 
 export async function runEval(
   hybrid: Hybrid,
-  opts: { modes: Mode[]; cloudModel: string; userAgent: string; onProgress?: (msg: string) => void },
+  opts: { modes: Mode[]; cloudModel: string; userAgent: string; onProgress?: (msg: string) => void; pauseMs?: number },
 ): Promise<EvalReport> {
   const rows: Row[] = [];
   const say = opts.onProgress ?? (() => {});
+  const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+  const pause = opts.pauseMs ?? 0;
+  // Free-tier quota: on HTTP 429 wait and try the same ladder again (up to 3 times).
+  // Response time is measured per call, so waiting does not change the numbers.
+  const withRateLimitRetry = async <T>(fn: () => Promise<T>): Promise<T> => {
+    for (let i = 0; ; i++) {
+      try { return await fn(); } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        if (i >= 3 || !/429|Too Many Requests|RESOURCE_EXHAUSTED/i.test(msg)) throw e;
+        say(`  429, waiting ${15 * (i + 1)} s`);
+        await wait(15_000 * (i + 1));
+      }
+    }
+  };
   for (const mode of opts.modes) {
     for (const item of LADDERS) {
+      if (pause && mode === "cloud" && item !== LADDERS[0]) await wait(pause);
       say(`${mode} ${item.id}`);
       const base = { id: item.id, tag: item.tag, mode } as const;
       try {
         // Invented ladders: on device the real text is used, in the cloud the redacted one.
-        const res = mode === "on_device" ? await hybrid.readOnDevice(item.ladder) : await hybrid.readInCloud(redactLadder(item.ladder).ladder);
+        const res = mode === "on_device" ? await hybrid.readOnDevice(item.ladder) : await withRateLimitRetry(() => hybrid.readInCloud(redactLadder(item.ladder).ladder));
         rows.push({
           ...base, status: "ok", attempts: res.attempts, ms: res.ms, source: res.source,
           startsAtNearest: startsAtNearest(res.reading, item.ladder),
@@ -130,7 +145,7 @@ export function toMarkdown(rep: EvalReport): string {
       `- Invalid after retry: ${s.invalid}; model unavailable: ${s.unavailable}; other errors: ${s.errors}`,
       `- Response time, median / p95: ${s.medianMs ?? "n/a"} ms / ${s.p95Ms ?? "n/a"} ms (valid answers only)`,
       `- Starts at the nearest obstacle: ${s.startsAtNearest} of ${s.validAfterRetry}`,
-      `- Safety rule breaks (diagnosis, promise, identity claim, medical advice, unsafe command): ${s.violationCount} in ${s.rowsWithViolations} answers ${JSON.stringify(s.violationsByRule)}`,
+      `- Safety rule breaks (diagnosis, promise, identity claim, medical advice, unsafe command): ${s.violationCount} (answers checked: ${s.validAfterRetry}; answers with a break: ${s.rowsWithViolations}) ${JSON.stringify(s.violationsByRule)}`,
       ``,
     );
   }

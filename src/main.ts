@@ -321,6 +321,7 @@ function renderEval() {
         cloudModel: cfgResult.ok ? cfgResult.config.cloudModel || DEFAULT_CLOUD_MODEL : DEFAULT_CLOUD_MODEL,
         userAgent: navigator.userAgent,
         onProgress: (m) => (log.textContent = m),
+        pauseMs: 4000, // free-tier requests-per-minute limit (cloud only)
       });
       const md = toMarkdown(rep);
       log.textContent = md;
