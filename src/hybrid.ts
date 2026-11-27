@@ -134,7 +134,18 @@ export function createHybrid(ai: AI, cloudModel?: string): Hybrid {
         throw new DeviceUnavailableError(e instanceof Error ? e.message : String(e), e);
       }
     },
-    readOnDevice: (ladder) => run(local, ladder, "on_device", true),
+    async readOnDevice(ladder) {
+      // Guard before the SDK call. When the browser has no Prompt API at all
+      // (Safari, Firefox, mobile), the SDK creates no on-device adapter and an
+      // ONLY_ON_DEVICE model silently calls the cloud with the real text.
+      // When the model is only downloadable, the SDK would wait for a
+      // multi-gigabyte download. In both cases we stop and ask for consent.
+      const status = await probeDevice();
+      if (status !== "available") throw new DeviceUnavailableError(`On-device model status: ${status}.`);
+      const res = await run(local, ladder, "on_device", true);
+      if (res.source !== "on_device") throw new DeviceUnavailableError("The answer did not come from the device.");
+      return res;
+    },
     readInCloud: (redacted) => run(cloud, redacted, "cloud", false),
   };
 }

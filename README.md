@@ -18,7 +18,9 @@ Status: running on a live Firebase project (Spark plan). Measured numbers are in
 4. **Send or not.** Send calls a separate `ONLY_IN_CLOUD` model with the redacted text. "Do not send" shows a built-in template reading from plain code, with the badge "Built-in template, no model".
 5. **Every answer shows where it came from** (this device, the cloud, or the template) and the response time in milliseconds. The source comes from the SDK's `inferenceSource`.
 
-Two separate model objects are used on purpose. Plain `PREFER_ON_DEVICE` would fall back to the cloud silently, with her unredacted text. Here the on-device model cannot do that.
+Two separate model objects are used on purpose. Plain `PREFER_ON_DEVICE` would fall back to the cloud silently, with her unredacted text.
+
+We also found that `ONLY_ON_DEVICE` alone is not enough. When the browser has no Prompt API at all (Safari, Firefox, mobile), the SDK creates no on-device adapter and sends the request to the cloud anyway, with the real text. When the model is only downloadable, the call waits for the download. So `readOnDevice` in `src/hybrid.ts` checks `LanguageModel.availability()` first, calls the model only when it is `available`, and rejects any answer whose `inferenceSource` is not on-device. In every other case she gets the consent panel.
 
 ### Strict JSON and safety
 
