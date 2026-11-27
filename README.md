@@ -96,7 +96,7 @@ The first on-device run gave 0 of 20 valid answers: the hybrid SDK does not pass
 
 ## Reused work
 
-The crisis words, redaction rules, help lines, system prompt and WHO-5 items come from an earlier private prototype of the same author (not published). Everything else, including the Firebase hybrid layer, the UI and the eval, was written for this hackathon.
+The crisis words, redaction rules, help lines, system prompt and WHO-5 items come from an earlier prototype by the same author, made for the GTransformer AI Buildathon 2026: https://github.com/liaizhan/ladder-private-guide. That prototype runs only in the cloud and does not use Firebase. Everything else, including the Firebase hybrid layer, the UI and the eval, was written for this hackathon.
 
 ## License
 
