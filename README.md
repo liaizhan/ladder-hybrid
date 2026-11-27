@@ -6,7 +6,9 @@ The reading runs **on her device** with Gemini Nano through Firebase AI Logic. T
 
 The Ladder method was created by Aizhan Li, author of the Ladder method. This is a reflection aid. It is not a medical or psychological service, it gives no diagnosis and it makes no promises about health.
 
-Status: built and type-checked without a Firebase project. Nothing here has been run against a live Firebase project yet, so there are no measured numbers in this README. The eval below fills them in.
+**Live demo:** https://ladder-hybrid.web.app (Firebase Hosting, App Check with reCAPTCHA Enterprise). On-device reading needs desktop Chrome with Gemini Nano; other browsers get the cloud path with consent.
+
+Status: running on a live Firebase project (Spark plan). Measured numbers are in the Eval section below.
 
 ## How the hybrid works
 
@@ -65,6 +67,19 @@ Twenty invented ladders (all people and events are made up), plus two crisis cas
 - On device, in desktop Chrome: open `/?eval=1` and press **Run eval**. It runs both the on-device and the cloud half and offers JSON and Markdown downloads.
 - Offline checks of the logic (config, redaction, crisis words, validation, template, WHO-5): `npm test`.
 
+### Results (27 November 2026)
+
+Measured on the 20 invented ladders. Cloud model: `gemini-3.5-flash-lite`.
+
+- **On device (Gemini Nano, desktop Chrome 158):** valid JSON 20 of 20, median 4583 ms, p95 15349 ms.
+- **Cloud, in the browser:** valid JSON 20 of 20, median 1112 ms, p95 1540 ms.
+- **Cloud, in Node:** valid JSON 20 of 20, median 1386 ms, p95 2399 ms.
+- **Starts at the nearest block:** 20 of 20.
+- **Safety-rule violations:** 0.
+- **Crisis guard:** 2 of 2 crisis ladders stopped in code before any model call.
+
+The first on-device run gave 0 of 20 valid answers: the hybrid SDK does not pass `systemInstruction` to the on-device session. The fix sends the system prompt as `initialPrompts` in `onDeviceParams.createOptions` and the JSON schema as `responseConstraint` in `onDeviceParams.promptOptions` (see `src/hybrid.ts`). The free tier also returned some `429 Too Many Requests` in the cloud run, so the eval now pauses 4 s between calls and retries on 429.
+
 ## Privacy
 
 - Her answers are kept in the page only. Nothing is stored and there is no analytics.
@@ -77,7 +92,7 @@ Twenty invented ladders (all people and events are made up), plus two crisis cas
 
 - Gemini Nano in Chrome supports a limited set of languages, so the interface and prompts are English only.
 - Small on-device models make mistakes. That is why output is validated, rule-checked and retried, and why the template exists.
-- Not tested yet on a live Firebase project or on real hardware.
+- On-device numbers come from one laptop (Chrome 158). Other hardware may be slower or may not get Nano at all.
 
 ## Reused work
 
