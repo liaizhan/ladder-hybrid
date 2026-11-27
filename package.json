@@ -1,0 +1,25 @@
+{
+  "name": "ladder-hybrid",
+  "version": "0.1.0",
+  "description": "The Ladder: Private Guide. Hybrid on-device (Gemini Nano) and cloud reflection tool built with Firebase AI Logic.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test": "tsx scripts/selftest.ts",
+    "eval": "tsx scripts/eval.ts"
+  },
+  "author": "Aizhan Li, author of the Ladder method",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "firebase": "^13.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.11",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vite": "^8.4.0"
+  },
+  "type": "module",
+  "private": true
+}
